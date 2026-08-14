@@ -11,7 +11,6 @@ def digitar(texto): # def é utilizado para criar comandos próprios, assim como
             time.sleep(0.04) # Espera 0.04 segundos antes da próxima letra. 
     print() # Pula uma linha quando terminar a frase toda.
 
-print()
 time.sleep(1)
 os.system('cls')
 
@@ -22,6 +21,11 @@ vida = 100
 
 nivel = 1
 
+inventario = [] # [] Significa Lista ou Array. Uma caixa grande, pronta para receber vários itens. 
+                # Como eu coloco um item dentro dessa lista sem apagar o que já tem lá? Nós usamos um "feitiço" das listas chamado .append() (que significa "anexar" ou "acrescentar ao final").
+                # inventario.append("Porção de Cura"). Agora você tem 1 item.
+                # inventario.append("Chave"). Agora você tem 2 itens.
+
 os.system('cls')
 
 digitar(f"\nBem-vindo a Jornada, {nome_jogador}") # O "f" dentro do print serve para chamar uma variável através de {}.
@@ -31,7 +35,7 @@ digitar(f"\n--- SEUS STATUS ---\n \nVida = {vida}\n \nNível = {nivel}") # \n se
 time.sleep(2)
 os.system('cls')
 
-digitar(f"\nVocê está caminhando por uma floresta e de repente se depara com uma caverna.\n")
+digitar(f"\nVocê está caminhando por uma floresta e de repente se depara com uma caverna. ")
 
 time.sleep(2)
 
@@ -45,6 +49,8 @@ os.system('cls')
 if escolha == "Sim": # Sinal de igual "=" significa RECEBE, dois sinais de igual "==" significa COMPARAR se alguna coisa é igual a outra.
     digitar(f"\nVocê entra na caverna e se depara com um Urso! ")
     
+    vida_urso = 40
+    
     while True: # O while repete algo enquanto uma condição for verdadeira. Cria o loop infinito. Tudo que tem TAB abaixo dele vai repetir.
         digitar(f"\nO que você faz? (1 - Atacar | 2 - Fugir | 3 - Cantar)")
         acao = input("> ")
@@ -53,14 +59,30 @@ if escolha == "Sim": # Sinal de igual "=" significa RECEBE, dois sinais de igual
         os.system('cls')
         
         if acao == "1":
-            digitar(f"\nVocê ataca o urso mas não faz efeito, pois você é muito fraco. ")
-            digitar(f"\nVocê recebe um contra-ataque. 20 de dano! ")
-            vida = vida - 20
+            digitar(f"\nVocê ataca o urso! ")
+            digitar(f'\nO Urso recebe 20 de dano. ')
+            vida_urso = vida_urso - 20
+            digitar(f'\nA Vida do Urso agora é {vida_urso}. ')
             
-            digitar(f"\nSua vida desceu para {vida}. ")
+            
+            if vida_urso <= 0:
+                digitar(f"\nVocê venceu! ")
+                time.sleep(2)
+                inventario.append("Pele de Urso")
+                os.system('cls')
+                digitar(f'\nVocê recebeu "Pele de Urso"! ')
+                digitar(f'\nSeu inventário: {inventario}. ')
+                break
+                                          
+            time.sleep(2)
+            os.system('cls')
+            
+            digitar(f'\nO Urso contra-ataca! ')
+            digitar(f'\nVocê recebe 20 de dano. ')
+            vida = vida - 20
+            digitar(f"\nSua Vida agora é {vida}. ")
             
             time.sleep(2)
-            
             os.system('cls')
             
             if vida <= 0:
@@ -77,9 +99,9 @@ if escolha == "Sim": # Sinal de igual "=" significa RECEBE, dois sinais de igual
             
         elif acao == "3":
             digitar(f"\nVocê começa a cantar! & & & ... ")
-            digitar(f"O urso dorme... ")
-            time.sleep(1)
-            digitar(f"Você consegue fugir! ")
+            digitar(f"\nO urso dorme... ")
+            time.sleep(2)
+            digitar(f"\nVocê consegue fugir! ")
             break
                 
         
@@ -93,3 +115,5 @@ if escolha == "Sim": # Sinal de igual "=" significa RECEBE, dois sinais de igual
         
 else:
     digitar(f"\nVocê entrelaça o rabo entre as pernas e vai para casa. Fim!")
+    
+    
