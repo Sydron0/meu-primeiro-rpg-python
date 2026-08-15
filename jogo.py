@@ -1,8 +1,9 @@
+
 import os # (Operating System): Para conversar com o seu Windows e mandar ele limpar a tela (os.system('cls')), por exemplo.
 import time # Para controlar o tempo e fazer o jogo "dormir" por alguns milissegundos.
-import sqlite3
+import sqlite3 # Traz a ferramenta oficial do Python para lidar com o banco de dados SQLite.
 
-conexao = sqlite3.connect('rpg.db') # Cria a ponte entre o Python e o arquivo do banco.
+conexao = sqlite3.connect('rpg.db') # Cria a ponte entre o Python e o arquivo do banco. Se o arquivo não existir, ele cria.
 cursor = conexao.cursor() # Cria o "mensageiro" que vai levar os comandos SQL até o banco e trazer as respostas.
 
 
@@ -19,17 +20,18 @@ def digitar(texto): # def é utilizado para criar comandos próprios, assim como
 time.sleep(1) # Pausar 1 segundo
 os.system('cls') # Limpar a tela
 
-digitar("\nQual seu nome, Herói?") # Se eu não quiser que alguma informação do input seja jogada na tela de uma vez, eu deixo ele em brando e coloco um print ou comando antes dele.
+digitar("\nQual seu nome, Herói?") # Se eu não quiser que alguma informação do input seja jogada na tela de uma vez, eu deixo ele em branco e coloco um print ou comando antes dele.
 nome_jogador = input("> ") # Se o input é uma resposta que vai ser guardada na variável, esse input fica na própria variável.
 
+# SELECT: Comando SQL para buscar dados. *: Curinga que significa "Todas as colunas". WHERE: Filtro "Onde". ?: Placeholder de segurança.
 comando_sql = """
-    SELECT * FROM jogador WHERE nome = ?""" 
+    SELECT * FROM jogador WHERE nome = ?""" # ? = O Placeholder (Marcador de Posição). É o espaço em branco seguro que o cursor vai preencher com a variável que passarmos na Tupla, evitando o ataque de *SQL Injection*.
 cursor.execute(comando_sql, (nome_jogador,)) # Executa o comando específicado no parentese.
-                                             # A tupla (nome_jogador,) não pode ficar dentro do comando SQL, tem que ser colocado diretamente no execute.
+                                             # A tupla (nome_jogador,) não pode ficar dentro do comando SQL, tem que ser colocado diretamente no execute. A vírgula é obrigatória quando a tupla tem só 1 item.
 
 resultados = cursor.fetchall() # Fetchall é o comando do cursor que significa "Busque todos". Ele pega tudo que o `SELECT` achou e devolve no formato de uma Lista []
 
-if len(resultados) == 0: # Vem de "Length" (Tamanho). Ferramenta do Python que conta quantos itens existem dentro de uma lista. == 0: Compara se o tamanho da lista é zero. Se for zero, significa que o banco procurou o nome e não achou ninguém (é um jogador novo).
+if len(resultados) == 0: # len() Vem de "Length" (Tamanho). Ferramenta do Python que conta quantos itens existem dentro de uma lista. == 0: Compara se o tamanho da lista é zero. Se for zero, significa que o banco procurou o nome e não achou ninguém (é um jogador novo).
     comando_sql = """ 
         INSERT INTO jogador (nome, vida, nivel) VALUES (?, ?, ?)""" # Insere uma nova linha na tabela
     
@@ -37,15 +39,21 @@ if len(resultados) == 0: # Vem de "Length" (Tamanho). Ferramenta do Python que c
 
     conexao.commit() # O "Salvar" definitivo. Confirma as alterações no disco rígido.
 
-    vida = 100 # Variável criada por mim com um valor específicado.
-    nivel = 1 # Variável criada por mim com um valor específicado.
+    vida = 100 # Variável criada por mim com um valor específicado para ser usada no jogo agora.
+    nivel = 1 # Variável criada por mim com um valor específicado para ser usada no jogo agora.
 
 else:
     digitar(f'\nSave Encontrado. Carregando... ')
     time.sleep(3)
-    linha = resultados[0]
-    vida = linha[2]
-    nivel = linha[3]
+    
+    # resultados[0]: Pega o primeiro item (posição 0) da lista que veio do banco. Ex: (1, 'Anderson', 100, 1)
+    linha = resultados[0] 
+    
+    # linha[2]: Pega o terceiro item da tupla (posição 2), que é a coluna 'vida' no banco de dados.
+    vida = linha[2] 
+    
+    # linha[3]: Pega o quarto item da tupla (posição 3), que é a coluna 'nivel' no banco de dados.
+    nivel = linha[3] 
 
 inventario = [] # [] Significa Lista ou Array. Uma caixa grande, pronta para receber vários itens. 
                 # Como eu coloco um item dentro dessa lista sem apagar o que já tem lá? Nós usamos um "feitiço" das listas chamado .append() (que significa "anexar" ou "acrescentar ao final").
