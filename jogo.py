@@ -1,5 +1,10 @@
 import os # (Operating System): Para conversar com o seu Windows e mandar ele limpar a tela (os.system('cls')), por exemplo.
 import time # Para controlar o tempo e fazer o jogo "dormir" por alguns milissegundos.
+import sqlite3
+
+conexao = sqlite3.connect('rpg.db') # Cria a ponte entre o Python e o arquivo do banco.
+cursor = conexao.cursor() # Cria o "mensageiro" que vai levar os comandos SQL até o banco e trazer as respostas.
+
 
 def digitar(texto): # def é utilizado para criar comandos próprios, assim como o comando "print" do próprio python. def: Vem de Define (Definir). É a palavra que avisa ao Python: "Ei, estou criando um comando novo que não existe no seu dicionário".
     for letra in texto: # Para cada letra dentro do texto. for: Significa Para. É o que chamamos de Laço de Repetição (Loop). Ele diz ao computador para repetir uma ação várias vezes. in: Significa Em ou Dentro de. Lendo a frase toda: for letra in texto: -> "Para cada letra que estiver dentro da variável texto, faça o seguinte:"
@@ -11,15 +16,36 @@ def digitar(texto): # def é utilizado para criar comandos próprios, assim como
             time.sleep(0.04) # Espera 0.04 segundos antes da próxima letra. 
     print() # Pula uma linha quando terminar a frase toda.
 
-time.sleep(1)
-os.system('cls')
+time.sleep(1) # Pausar 1 segundo
+os.system('cls') # Limpar a tela
 
 digitar("\nQual seu nome, Herói?") # Se eu não quiser que alguma informação do input seja jogada na tela de uma vez, eu deixo ele em brando e coloco um print ou comando antes dele.
 nome_jogador = input("> ") # Se o input é uma resposta que vai ser guardada na variável, esse input fica na própria variável.
 
-vida = 100
+comando_sql = """
+    SELECT * FROM jogador WHERE nome = ?""" 
+cursor.execute(comando_sql, (nome_jogador,)) # Executa o comando específicado no parentese.
+                                             # A tupla (nome_jogador,) não pode ficar dentro do comando SQL, tem que ser colocado diretamente no execute.
 
-nivel = 1
+resultados = cursor.fetchall() # Fetchall é o comando do cursor que significa "Busque todos". Ele pega tudo que o `SELECT` achou e devolve no formato de uma Lista []
+
+if len(resultados) == 0: # Vem de "Length" (Tamanho). Ferramenta do Python que conta quantos itens existem dentro de uma lista. == 0: Compara se o tamanho da lista é zero. Se for zero, significa que o banco procurou o nome e não achou ninguém (é um jogador novo).
+    comando_sql = """ 
+        INSERT INTO jogador (nome, vida, nivel) VALUES (?, ?, ?)""" # Insere uma nova linha na tabela
+    
+    cursor.execute(comando_sql, (nome_jogador, 100, 1)) # Executa o comando específicado no parentese.
+
+    conexao.commit() # O "Salvar" definitivo. Confirma as alterações no disco rígido.
+
+    vida = 100 # Variável criada por mim com um valor específicado.
+    nivel = 1 # Variável criada por mim com um valor específicado.
+
+else:
+    digitar(f'\nSave Encontrado. Carregando... ')
+    time.sleep(3)
+    linha = resultados[0]
+    vida = linha[2]
+    nivel = linha[3]
 
 inventario = [] # [] Significa Lista ou Array. Uma caixa grande, pronta para receber vários itens. 
                 # Como eu coloco um item dentro dessa lista sem apagar o que já tem lá? Nós usamos um "feitiço" das listas chamado .append() (que significa "anexar" ou "acrescentar ao final").
@@ -117,3 +143,4 @@ else:
     digitar(f"\nVocê entrelaça o rabo entre as pernas e vai para casa. Fim!")
     
     
+conexao.close() # Fecha a ponte. Regra de ouro: abriu, usou, fechou.
