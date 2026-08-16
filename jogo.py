@@ -38,12 +38,16 @@ if len(resultados) == 0: # len() Vem de "Length" (Tamanho). Ferramenta do Python
     cursor.execute(comando_sql, (nome_jogador, 100, 1)) # Executa o comando específicado no parentese.
 
     conexao.commit() # O "Salvar" definitivo. Confirma as alterações no disco rígido.
+    
+    id_jogador = cursor.lastrowid # Verifica o ID da última linha criada.
 
     vida = 100 # Variável criada por mim com um valor específicado para ser usada no jogo agora.
     nivel = 1 # Variável criada por mim com um valor específicado para ser usada no jogo agora.
 
 else:
-    digitar(f'\nSave Encontrado. Carregando... ')
+    digitar(f'\nSave Encontrado. ')
+    time.sleep(2)
+    digitar(f'\nCarregando...' )
     time.sleep(3)
     
     # resultados[0]: Pega o primeiro item (posição 0) da lista que veio do banco. Ex: (1, 'Anderson', 100, 1)
@@ -54,6 +58,10 @@ else:
     
     # linha[3]: Pega o quarto item da tupla (posição 3), que é a coluna 'nivel' no banco de dados.
     nivel = linha[3] 
+    
+    id_jogador = linha[0] # Pega o primeiro item da tupla que, no caso, é o ID.
+    
+    
 
 inventario = [] # [] Significa Lista ou Array. Uma caixa grande, pronta para receber vários itens. 
                 # Como eu coloco um item dentro dessa lista sem apagar o que já tem lá? Nós usamos um "feitiço" das listas chamado .append() (que significa "anexar" ou "acrescentar ao final").
@@ -81,9 +89,10 @@ escolha = input("> ")
 os.system('cls')
 
 if escolha == "Sim": # Sinal de igual "=" significa RECEBE, dois sinais de igual "==" significa COMPARAR se alguna coisa é igual a outra.
-    digitar(f"\nVocê entra na caverna e se depara com um Urso! ")
-    
     vida_urso = 40
+    digitar(f"\nVocê entra na caverna e se depara com um Urso! Vida: {vida_urso} ")
+    
+    
     
     while True: # O while repete algo enquanto uma condição for verdadeira. Cria o loop infinito. Tudo que tem TAB abaixo dele vai repetir.
         digitar(f"\nO que você faz? (1 - Atacar | 2 - Fugir | 3 - Cantar)")
@@ -105,7 +114,17 @@ if escolha == "Sim": # Sinal de igual "=" significa RECEBE, dois sinais de igual
                 inventario.append("Pele de Urso")
                 os.system('cls')
                 digitar(f'\nVocê recebeu "Pele de Urso"! ')
+                
+                comando_sql = """
+                    INSERT INTO inventario (id_jogador, nome_item) VALUES (?, ?)""" # Insere uma nova linha na tabela.
+                cursor.execute(comando_sql, (id_jogador, "Pele de Urso")) # Executa o comando entre ().
+                conexao.commit()
+                             
                 digitar(f'\nSeu inventário: {inventario}. ')
+                time.sleep(2)
+                digitar(f'\nFim de Jogo! ')
+                time.sleep(3)
+                os.system('cls')
                 break
                                           
             time.sleep(2)
@@ -116,11 +135,21 @@ if escolha == "Sim": # Sinal de igual "=" significa RECEBE, dois sinais de igual
             vida = vida - 20
             digitar(f"\nSua Vida agora é {vida}. ")
             
+            comando_sql = """
+                UPDATE jogador SET vida = ? WHERE nome = ?""" # Comando para atualizar a vida e o nome que vão ser passados na tupla no execute.
+                                                              # REGRA: Nunca faça um UPDATE sem WHERE, se fizer, toda a tabela vai ser atualizada.
+            cursor.execute(comando_sql, (vida, nome_jogador)) # As informações da tupla tem que ser na ordem exata da variável executada (comando_sql)
+            conexao.commit()
+            
             time.sleep(2)
             os.system('cls')
             
             if vida <= 0:
                 digitar(f"\nVocê não resistiu aos ferimentos. Você morre! ")
+                time.sleep(2)
+                digitar(f'\nFim de Jogo! ')
+                time.sleep(3)
+                os.system('cls')
                 break # Mas como saímos desse pesadelo? Usando a palavra mágica break (Quebrar). Quando o Python lê break, ele destrói o loop e o jogo continua para baixo.
                 
           
@@ -128,7 +157,11 @@ if escolha == "Sim": # Sinal de igual "=" significa RECEBE, dois sinais de igual
             digitar(f"\nVocê tenta correr, mas o urso é mais rápido e te alcança.\n \nCom a velocidade, o ataque do urso é mais forte, você recebe 100 de dano! ")
             vida = vida - 100
                         
-            digitar(f"\nSua vida desceu para {vida}. Você morre! " )
+            digitar(f"\nSua vida desceu para {vida}. Você morre! ")
+            time.sleep(2)
+            digitar(f'\nFim de Jogo! ')
+            time.sleep(3)
+            os.system('cls')
             break
             
         elif acao == "3":
@@ -136,6 +169,10 @@ if escolha == "Sim": # Sinal de igual "=" significa RECEBE, dois sinais de igual
             digitar(f"\nO urso dorme... ")
             time.sleep(2)
             digitar(f"\nVocê consegue fugir! ")
+            time.sleep(2)
+            digitar(f'\nFim de Jogo! ')
+            time.sleep(3)
+            os.system('cls')
             break
                 
         
@@ -145,10 +182,18 @@ if escolha == "Sim": # Sinal de igual "=" significa RECEBE, dois sinais de igual
         
             time.sleep(1)
             digitar(f"\nVocê morre! ")
+            time.sleep(2)
+            digitar(f'\nFim de Jogo! ')
+            time.sleep(3)
+            os.system('cls')
             break
         
 else:
-    digitar(f"\nVocê entrelaça o rabo entre as pernas e vai para casa. Fim!")
+    digitar(f"\nVocê entrelaça o rabo entre as pernas e vai para casa. Fim! ")
+    time.sleep(2)
+    digitar(f'\nFim de Jogo! ')
+    time.sleep(3)
+    os.system('cls')
     
     
 conexao.close() # Fecha a ponte. Regra de ouro: abriu, usou, fechou.
