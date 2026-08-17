@@ -2,6 +2,7 @@
 import os # (Operating System): Para conversar com o seu Windows e mandar ele limpar a tela (os.system('cls')), por exemplo.
 import time # Para controlar o tempo e fazer o jogo "dormir" por alguns milissegundos.
 import sqlite3 # Traz a ferramenta oficial do Python para lidar com o banco de dados SQLite.
+import random # Estatística, probabilidades e gerador e números aleatórios
 
 conexao = sqlite3.connect('rpg.db') # Cria a ponte entre o Python e o arquivo do banco. Se o arquivo não existir, ele cria.
 cursor = conexao.cursor() # Cria o "mensageiro" que vai levar os comandos SQL até o banco e trazer as respostas.
@@ -33,9 +34,9 @@ resultados = cursor.fetchall() # Fetchall é o comando do cursor que significa "
 
 if len(resultados) == 0: # len() Vem de "Length" (Tamanho). Ferramenta do Python que conta quantos itens existem dentro de uma lista. == 0: Compara se o tamanho da lista é zero. Se for zero, significa que o banco procurou o nome e não achou ninguém (é um jogador novo).
     comando_sql = """ 
-        INSERT INTO jogador (nome, vida, nivel) VALUES (?, ?, ?)""" # Insere uma nova linha na tabela
+        INSERT INTO jogador (nome, vida, nivel, xp) VALUES (?, ?, ?, ?)""" # Insere uma nova linha na tabela
     
-    cursor.execute(comando_sql, (nome_jogador, 100, 1)) # Executa o comando específicado no parentese.
+    cursor.execute(comando_sql, (nome_jogador, 100, 1, 0)) # Executa o comando específicado no parentese.
 
     conexao.commit() # O "Salvar" definitivo. Confirma as alterações no disco rígido.
     
@@ -61,6 +62,8 @@ else:
     
     id_jogador = linha[0] # Pega o primeiro item da tupla que, no caso, é o ID.
     
+    xp = linha[4] # Pega o quinto item da tupla.
+    
 comando_sql = """
     SELECT GROUP_CONCAT(nome_item, ', ') FROM inventario WHERE id_jogador = ?""" 
     # GROUP_CONCAT junta a pesquisa em uma linha só. O ', ' serve para colocar uma vírgula e um espaço entre os itens da pesquisa, evitnado que tudo fiquejuntoassim.
@@ -71,11 +74,6 @@ resultado_mochila = cursor.fetchall() # Fetchall é o comando do cursor que sign
 
 itens_da_mochila = resultado_mochila[0][0] # O primeiro [0] pega a primeira linha do banco e o outro [0] pega a primeira coluna (nosso texto), joga fora os [] e () para pegar só o texto puro.
 
-if itens_da_mochila == None:
-    digitar(f'\nInventário: Vazio. ')
-        
-else:
-    digitar(f'\nInventário: {itens_da_mochila}. ')
     
 time.sleep(2)    
 
@@ -83,7 +81,14 @@ os.system('cls')
 
 digitar(f"\nBem-vindo a Jornada, {nome_jogador}") # O "f" dentro do print serve para chamar uma variável através de {}.
 
-digitar(f"\n--- SEUS STATUS ---\n \nVida = {vida}\n \nNível = {nivel}") # \n serve para pular a linha (o mesmo que apertar enter). Se usando no início do print, ele da um "enter" antes de imprimir o texto.
+digitar(f"\n--- SEUS STATUS ---\n \nVida = {vida}\n \nNível = {nivel}\n \nXP = {xp} ") # \n serve para pular a linha (o mesmo que apertar enter). Se usando no início do print, ele da um "enter" antes de imprimir o texto.
+
+if itens_da_mochila == None:
+    digitar(f'\nInventário: Vazio. ')
+        
+else:
+    digitar(f'\nInventário: {itens_da_mochila}. ')
+    
 time.sleep(3)
 os.system('cls')
 if vida <= 50:
@@ -93,7 +98,7 @@ if vida <= 50:
         if escolha.lower() in ['sim', 'claro', 'quero', 's']: # Lower converte na marra para letras minúsculas antes de fazer a comparação.
                                                               # in compara a informação recebido com as opções da caixa []
             comando_sql = """
-                UPDATE jogador SET vida = MIN(100, vida + 100) WHERE nome = ?""" # Cura o jogador para no máximo 100 de vida.
+                UPDATE jogador SET vida = MIN(100, vida + 200) WHERE nome = ?""" # Cura o jogador para no máximo 100 de vida.
             cursor.execute(comando_sql, (nome_jogador,))
             conexao.commit()
             
@@ -113,6 +118,8 @@ if vida <= 50:
             nivel = linha[3] 
             
             id_jogador = linha[0] # Pega o primeiro item da tupla que, no caso, é o ID.
+            
+            xp = linha[4] # Pega o quinto item da tupla.
             
             digitar(f'\nVocê foi curado! Sua vida agora é: {vida}. ')
             time.sleep(3)
@@ -145,7 +152,7 @@ while True:
     os.system('cls')
 
     if escolha.lower() in ['sim', 'claro', 'quero', 's']:
-        vida_urso = 40
+        vida_urso = 60
         digitar(f"\nVocê entra na caverna e se depara com um Urso! Vida: {vida_urso} ")
     
     
@@ -159,21 +166,40 @@ while True:
             
             if acao == "1":
                 digitar(f"\nVocê ataca o urso! ")
-                digitar(f'\nO Urso recebe 20 de dano. ')
-                vida_urso = vida_urso - 20
+                meu_dano = random.randint(60, 90) # random.randint faz o dano ser aleatório entre 15 e 30.
+                digitar(f'\nO Urso recebe {meu_dano} de dano. ')
+                vida_urso = max(0, vida_urso - meu_dano)
                 digitar(f'\nA Vida do Urso agora é {vida_urso}. ')
                 
                 
                 if vida_urso <= 0:
                     digitar(f"\nVocê venceu! ")
+                    xp = xp + 50
+                    time.sleep(2)
+                    digitar(f'\nVocê ganhou 50 XP! (XP Total: {xp}.) ')
                     time.sleep(2)
                     os.system('cls')
-                    digitar(f'\nVocê recebeu "Pele de Urso"! ')
-                    
+                    if xp >= (nivel ** 2) * 100: # Parábola que verifica se o jogador chegou ao XP necessário para suber de Nível.
+                        nivel = nivel + 1
+                        vida = 100
+                        digitar(f'\nVocê subiu para o Nível {nivel}! ')
+                        digitar(f'\nSua Vida foi restaurada!')
+                        time.sleep(3)
                     comando_sql = """
-                        INSERT INTO inventario (id_jogador, nome_item) VALUES (?, ?)""" # Insere uma nova linha na tabela.
-                    cursor.execute(comando_sql, (id_jogador, "Pele de Urso")) # Executa o comando entre ().
-                    conexao.commit()
+                        UPDATE jogador SET vida = ?, nivel = ?, xp = ? WHERE nome = ?"""
+                    cursor.execute(comando_sql,(vida, nivel, xp, nome_jogador))
+                    conexao.commit()             
+                    
+                    sorteio = random.randint(1, 100) # aleatoriaedade de 1 e 100.
+                    if sorteio <= 50: # (drop rate) 50% de chance de receber ou não o item.
+                        comando_sql = """
+                            INSERT INTO inventario (id_jogador, nome_item) VALUES (?, ?)""" # Insere uma nova linha na tabela.
+                        cursor.execute(comando_sql, (id_jogador, "Pele de Urso")) # Executa o comando entre ().
+                        conexao.commit()
+                        digitar(f'\nVocê recebeu "Pele de Urso". ')
+                    
+                    else:
+                        digitar(f'\nO Urso não dropou nenhum item. ')
                                  
                     
                     time.sleep(2)
@@ -186,8 +212,9 @@ while True:
                 os.system('cls')
                 
                 digitar(f'\nO Urso contra-ataca! ')
-                digitar(f'\nVocê recebe 20 de dano. ')
-                vida = vida - 20
+                dano_urso = random.randint(10, 25) # random.randint faz o dano ser aleatório entre 10 e 25.
+                digitar(f'\nVocê recebe {dano_urso} de dano. ')
+                vida = vida - dano_urso
                 digitar(f"\nSua Vida agora é {vida}. ")
                 
                 comando_sql = """
@@ -211,8 +238,29 @@ while True:
               
             elif acao == "2":
                 digitar(f"\nVocê tenta correr, mas o urso é mais rápido e te alcança.\n \nCom a velocidade, o ataque do urso é mais forte, você recebe 100 de dano! ")
-                vida = vida - 100
-                            
+                
+                comando_sql = """
+                UPDATE jogador SET vida = MAX(0, vida - 100) WHERE nome = ?""" # Cura o jogador para no máximo 100 de vida.
+                cursor.execute(comando_sql, (nome_jogador,))
+                conexao.commit()
+                
+                comando_sql = """
+                    SELECT * FROM jogador WHERE nome = ?"""
+                cursor.execute(comando_sql, (nome_jogador,)) # Executa o comando específicado no parentese.
+                                                 # A tupla (nome_jogador,) não pode ficar dentro do comando SQL, tem que ser colocado diretamente no execute. A vírgula é obrigatória quando a tupla tem só 1 item.
+
+                resultados = cursor.fetchall() # Fetchall é o comando do cursor que significa "Busque todos". Ele pega tudo que o `SELECT` achou e devolve no formato de uma Lista []
+                # resultados[0]: Pega o primeiro item (posição 0) da lista que veio do banco. Ex: (1, 'Anderson', 100, 1)
+                linha = resultados[0] 
+                
+                # linha[2]: Pega o terceiro item da tupla (posição 2), que é a coluna 'vida' no banco de dados.
+                vida = linha[2] 
+                
+                # linha[3]: Pega o quarto item da tupla (posição 3), que é a coluna 'nivel' no banco de dados.
+                nivel = linha[3] 
+                
+                id_jogador = linha[0] # Pega o primeiro item da tupla que, no caso, é o ID.
+                                            
                 digitar(f"\nSua vida desceu para {vida}. Você morre! ")
                 time.sleep(2)
                 digitar(f'\nFim de Jogo! ')
