@@ -61,21 +61,76 @@ else:
     
     id_jogador = linha[0] # Pega o primeiro item da tupla que, no caso, é o ID.
     
+comando_sql = """
+    SELECT GROUP_CONCAT(nome_item, ', ') FROM inventario WHERE id_jogador = ?""" 
+    # GROUP_CONCAT junta a pesquisa em uma linha só. O ', ' serve para colocar uma vírgula e um espaço entre os itens da pesquisa, evitnado que tudo fiquejuntoassim.
     
+cursor.execute(comando_sql, (id_jogador,)) # REGRA: sempre que a tupla tiver apenas 1 item, tem que colocar vírgula no final.
 
-inventario = [] # [] Significa Lista ou Array. Uma caixa grande, pronta para receber vários itens. 
-                # Como eu coloco um item dentro dessa lista sem apagar o que já tem lá? Nós usamos um "feitiço" das listas chamado .append() (que significa "anexar" ou "acrescentar ao final").
-                # inventario.append("Porção de Cura"). Agora você tem 1 item.
-                # inventario.append("Chave"). Agora você tem 2 itens.
+resultado_mochila = cursor.fetchall() # Fetchall é o comando do cursor que significa "Busque todos". Ele pega tudo que o `SELECT` achou e devolve no formato de uma Lista []
+
+itens_da_mochila = resultado_mochila[0][0] # O primeiro [0] pega a primeira linha do banco e o outro [0] pega a primeira coluna (nosso texto), joga fora os [] e () para pegar só o texto puro.
+
+if itens_da_mochila == None:
+    digitar(f'\nInventário: Vazio. ')
+        
+else:
+    digitar(f'\nInventário: {itens_da_mochila}. ')
+    
+time.sleep(2)    
 
 os.system('cls')
 
 digitar(f"\nBem-vindo a Jornada, {nome_jogador}") # O "f" dentro do print serve para chamar uma variável através de {}.
 
 digitar(f"\n--- SEUS STATUS ---\n \nVida = {vida}\n \nNível = {nivel}") # \n serve para pular a linha (o mesmo que apertar enter). Se usando no início do print, ele da um "enter" antes de imprimir o texto.
-
-time.sleep(2)
+time.sleep(3)
 os.system('cls')
+if vida <= 50:
+    while True:
+        digitar(f'\n Sua Vida está baixa. Gostaria de se curar antes de iniciar a jornada? ')
+        escolha = input('> ')
+        if escolha.lower() in ['sim', 'claro', 'quero', 's']: # Lower converte na marra para letras minúsculas antes de fazer a comparação.
+                                                              # in compara a informação recebido com as opções da caixa []
+            comando_sql = """
+                UPDATE jogador SET vida = MIN(100, vida + 100) WHERE nome = ?""" # Cura o jogador para no máximo 100 de vida.
+            cursor.execute(comando_sql, (nome_jogador,))
+            conexao.commit()
+            
+            comando_sql = """
+                SELECT * FROM jogador WHERE nome = ?"""
+            cursor.execute(comando_sql, (nome_jogador,)) # Executa o comando específicado no parentese.
+                                             # A tupla (nome_jogador,) não pode ficar dentro do comando SQL, tem que ser colocado diretamente no execute. A vírgula é obrigatória quando a tupla tem só 1 item.
+
+            resultados = cursor.fetchall() # Fetchall é o comando do cursor que significa "Busque todos". Ele pega tudo que o `SELECT` achou e devolve no formato de uma Lista []
+            # resultados[0]: Pega o primeiro item (posição 0) da lista que veio do banco. Ex: (1, 'Anderson', 100, 1)
+            linha = resultados[0] 
+            
+            # linha[2]: Pega o terceiro item da tupla (posição 2), que é a coluna 'vida' no banco de dados.
+            vida = linha[2] 
+            
+            # linha[3]: Pega o quarto item da tupla (posição 3), que é a coluna 'nivel' no banco de dados.
+            nivel = linha[3] 
+            
+            id_jogador = linha[0] # Pega o primeiro item da tupla que, no caso, é o ID.
+            
+            digitar(f'\nVocê foi curado! Sua vida agora é: {vida}. ')
+            time.sleep(3)
+            os.system('cls')
+            break
+            
+        elif escolha.lower() in ['não', 'nao', 'n', 'não quero', 'nao quero', 'n quero']:
+            digitar(f'\nVocê que sabe... ')
+            break
+            
+        else:
+            digitar(f'Comando não reconhecido. ')
+            time.sleep(2)
+            os.system('cls')
+            
+            
+
+
 
 digitar(f"\nVocê está caminhando por uma floresta e de repente se depara com uma caverna. ")
 
@@ -83,117 +138,125 @@ time.sleep(2)
 
 os.system('cls')
 
-digitar("\nVocê deseja entrar na caverna?")
-escolha = input("> ")
+while True:
+    digitar("\nVocê deseja entrar na caverna?")
+    escolha = input("> ")
 
-os.system('cls')
+    os.system('cls')
 
-if escolha == "Sim": # Sinal de igual "=" significa RECEBE, dois sinais de igual "==" significa COMPARAR se alguna coisa é igual a outra.
-    vida_urso = 40
-    digitar(f"\nVocê entra na caverna e se depara com um Urso! Vida: {vida_urso} ")
+    if escolha.lower() in ['sim', 'claro', 'quero', 's']:
+        vida_urso = 40
+        digitar(f"\nVocê entra na caverna e se depara com um Urso! Vida: {vida_urso} ")
     
     
     
-    while True: # O while repete algo enquanto uma condição for verdadeira. Cria o loop infinito. Tudo que tem TAB abaixo dele vai repetir.
-        digitar(f"\nO que você faz? (1 - Atacar | 2 - Fugir | 3 - Cantar)")
-        acao = input("> ")
-        
+        while True: # O while repete algo enquanto uma condição for verdadeira. Cria o loop infinito. Tudo que tem TAB abaixo dele vai repetir.
+            digitar(f"\nO que você faz? (1 - Atacar | 2 - Fugir | 3 - Cantar)")
+            acao = input("> ")
+            
+                    
+            os.system('cls')
+            
+            if acao == "1":
+                digitar(f"\nVocê ataca o urso! ")
+                digitar(f'\nO Urso recebe 20 de dano. ')
+                vida_urso = vida_urso - 20
+                digitar(f'\nA Vida do Urso agora é {vida_urso}. ')
                 
-        os.system('cls')
-        
-        if acao == "1":
-            digitar(f"\nVocê ataca o urso! ")
-            digitar(f'\nO Urso recebe 20 de dano. ')
-            vida_urso = vida_urso - 20
-            digitar(f'\nA Vida do Urso agora é {vida_urso}. ')
-            
-            
-            if vida_urso <= 0:
-                digitar(f"\nVocê venceu! ")
+                
+                if vida_urso <= 0:
+                    digitar(f"\nVocê venceu! ")
+                    time.sleep(2)
+                    os.system('cls')
+                    digitar(f'\nVocê recebeu "Pele de Urso"! ')
+                    
+                    comando_sql = """
+                        INSERT INTO inventario (id_jogador, nome_item) VALUES (?, ?)""" # Insere uma nova linha na tabela.
+                    cursor.execute(comando_sql, (id_jogador, "Pele de Urso")) # Executa o comando entre ().
+                    conexao.commit()
+                                 
+                    
+                    time.sleep(2)
+                    digitar(f'\nFim de Jogo! ')
+                    time.sleep(3)
+                    os.system('cls')
+                    break
+                                              
                 time.sleep(2)
-                inventario.append("Pele de Urso")
                 os.system('cls')
-                digitar(f'\nVocê recebeu "Pele de Urso"! ')
+                
+                digitar(f'\nO Urso contra-ataca! ')
+                digitar(f'\nVocê recebe 20 de dano. ')
+                vida = vida - 20
+                digitar(f"\nSua Vida agora é {vida}. ")
                 
                 comando_sql = """
-                    INSERT INTO inventario (id_jogador, nome_item) VALUES (?, ?)""" # Insere uma nova linha na tabela.
-                cursor.execute(comando_sql, (id_jogador, "Pele de Urso")) # Executa o comando entre ().
+                    UPDATE jogador SET vida = ? WHERE nome = ?""" # Comando para atualizar a vida e o nome que vão ser passados na tupla no execute.
+                                                                  # REGRA: Nunca faça um UPDATE sem WHERE, se fizer, toda a tabela vai ser atualizada.
+                                                                  
+                cursor.execute(comando_sql, (vida, nome_jogador)) # As informações da tupla tem que ser na ordem exata da variável executada (comando_sql)
                 conexao.commit()
-                             
-                digitar(f'\nSeu inventário: {inventario}. ')
+                
+                time.sleep(2)
+                os.system('cls')
+                
+                if vida <= 0:
+                    digitar(f"\nVocê não resistiu aos ferimentos. Você morre! ")
+                    time.sleep(2)
+                    digitar(f'\nFim de Jogo! ')
+                    time.sleep(3)
+                    os.system('cls')
+                    break # Mas como saímos desse pesadelo? Usando a palavra mágica break (Quebrar). Quando o Python lê break, ele destrói o loop e o jogo continua para baixo.
+                    
+              
+            elif acao == "2":
+                digitar(f"\nVocê tenta correr, mas o urso é mais rápido e te alcança.\n \nCom a velocidade, o ataque do urso é mais forte, você recebe 100 de dano! ")
+                vida = vida - 100
+                            
+                digitar(f"\nSua vida desceu para {vida}. Você morre! ")
                 time.sleep(2)
                 digitar(f'\nFim de Jogo! ')
                 time.sleep(3)
                 os.system('cls')
                 break
-                                          
-            time.sleep(2)
-            os.system('cls')
-            
-            digitar(f'\nO Urso contra-ataca! ')
-            digitar(f'\nVocê recebe 20 de dano. ')
-            vida = vida - 20
-            digitar(f"\nSua Vida agora é {vida}. ")
-            
-            comando_sql = """
-                UPDATE jogador SET vida = ? WHERE nome = ?""" # Comando para atualizar a vida e o nome que vão ser passados na tupla no execute.
-                                                              # REGRA: Nunca faça um UPDATE sem WHERE, se fizer, toda a tabela vai ser atualizada.
-            cursor.execute(comando_sql, (vida, nome_jogador)) # As informações da tupla tem que ser na ordem exata da variável executada (comando_sql)
-            conexao.commit()
-            
-            time.sleep(2)
-            os.system('cls')
-            
-            if vida <= 0:
-                digitar(f"\nVocê não resistiu aos ferimentos. Você morre! ")
+                
+            elif acao == "3":
+                digitar(f"\nVocê começa a cantar! & & & ... ")
+                digitar(f"\nO urso dorme... ")
+                time.sleep(2)
+                digitar(f"\nVocê consegue fugir! ")
                 time.sleep(2)
                 digitar(f'\nFim de Jogo! ')
                 time.sleep(3)
                 os.system('cls')
-                break # Mas como saímos desse pesadelo? Usando a palavra mágica break (Quebrar). Quando o Python lê break, ele destrói o loop e o jogo continua para baixo.
-                
-          
-        elif acao == "2":
-            digitar(f"\nVocê tenta correr, mas o urso é mais rápido e te alcança.\n \nCom a velocidade, o ataque do urso é mais forte, você recebe 100 de dano! ")
-            vida = vida - 100
-                        
-            digitar(f"\nSua vida desceu para {vida}. Você morre! ")
-            time.sleep(2)
-            digitar(f'\nFim de Jogo! ')
-            time.sleep(3)
-            os.system('cls')
-            break
+                break
+                    
             
-        elif acao == "3":
-            digitar(f"\nVocê começa a cantar! & & & ... ")
-            digitar(f"\nO urso dorme... ")
-            time.sleep(2)
-            digitar(f"\nVocê consegue fugir! ")
-            time.sleep(2)
-            digitar(f'\nFim de Jogo! ')
-            time.sleep(3)
-            os.system('cls')
-            break
-                
-        
-        else:
-            digitar(f"\nVocê desmaia e o urso come você! ")
-            vida = vida - 100
-        
-            time.sleep(1)
-            digitar(f"\nVocê morre! ")
-            time.sleep(2)
-            digitar(f'\nFim de Jogo! ')
-            time.sleep(3)
-            os.system('cls')
-            break
-        
-else:
-    digitar(f"\nVocê entrelaça o rabo entre as pernas e vai para casa. Fim! ")
-    time.sleep(2)
-    digitar(f'\nFim de Jogo! ')
-    time.sleep(3)
-    os.system('cls')
+            else:
+                digitar(f"\nVocê desmaia e o urso come você! ")
+                vida = vida - 100
+            
+                time.sleep(1)
+                digitar(f"\nVocê morre! ")
+                time.sleep(2)
+                digitar(f'\nFim de Jogo! ')
+                time.sleep(3)
+                os.system('cls')
+                break
+            
+        break
+            
+    elif escolha.lower() in ['não', 'nao', 'n', 'não quero', 'nao quero', 'n quero']:
+        digitar(f"\nVocê entrelaça o rabo entre as pernas e vai para casa. Fim! ")
+        time.sleep(2)
+        digitar(f'\nFim de Jogo! ')
+        time.sleep(3)
+        os.system('cls')
+        break
+            
+    else:
+        digitar(f'\nComando não reconhecido. ')
+        os.system('cls')
     
     
 conexao.close() # Fecha a ponte. Regra de ouro: abriu, usou, fechou.
